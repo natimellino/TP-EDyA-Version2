@@ -53,7 +53,7 @@ int buscar_nodo(BTree nodo, wchar_t* palabra){
   if (nodo == NULL){
     return 0;
   }
-  if (!wcscmp((wchar_t*)nodo->dato, palabra)){
+  if (wcscmp((wchar_t*)nodo->dato, palabra) == 0){
     return 1;
   }
   else{

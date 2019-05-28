@@ -30,32 +30,39 @@ void eliminar_caracter(wchar_t* palabra, int i){
 
 // Agrega al caracter c en la posición pos.
 
-void poner_caracter(wchar_t* palabra, wchar_t* cadenaRetorno, wchar_t c, int pos){
+void poner_caracter(wchar_t* palabra, wchar_t c, int pos){
     int len = wcslen(palabra);
-    wcscpy(cadenaRetorno, palabra);
     for(int i = len; i >= pos; i--){
-        cadenaRetorno[i] = cadenaRetorno[i-1];
+        palabra[i] = palabra[i-1];
     }
-    cadenaRetorno[pos] = c;
+    palabra[pos] = c;
+    wprintf(L"p[pos]: %lc\n", palabra[pos]);
 }
 // Separa la palabra en dos agregando un espacio en palabra[pos].
 
-void separar(wchar_t* palabra, wchar_t* resultado, wchar_t* sub1, wchar_t* sub2, int pos){
+void separar(wchar_t* palabra, wchar_t* sub1, wchar_t* sub2, int pos){
     int len = wcslen(palabra);
-    wcscpy(resultado, palabra);
-    poner_caracter(palabra, resultado, ' ', pos);
-    int i, j=0;
-    for (i = 0; i <= len; i++){
-        if (i < pos){
-            sub1[i] = resultado[i]; 
+    if (pos != 0 && pos != len){
+
+        int i, j = 0;
+        for (i = 0; i < len; i++){
+            wprintf(L"i: %d\n", i);
+            if (i < pos){
+                sub1[i] = palabra[i];
+                wprintf(L"%lc\n", palabra[i]);
+            }   
+            if (i >= pos && j < len - pos){
+                sub2[j] = palabra[i];
+                j++;
+            } 
         }
-        else if (i > pos && j < len - pos){
-            sub2[j] = resultado[i];
-            j++;
-        } 
-    }
-    sub1[i-j] = '\0';
-    sub2[j] = '\0';
+        //palabra[len] = '\0';
+        wprintf(L"%ls, %ls\n", sub1, sub2);
+        sub1[i-j] = '\0';
+        sub2[j] = '\0';
+        //poner_caracter(palabra, ' ', pos);
+        
+    } 
 }
 
 // Reemplaza el caracter de la posición pos de la palabra por el char c.
@@ -77,6 +84,18 @@ void insertar_palabra(wchar_t* palabra, wchar_t* palabraNueva, int pos){
         palabra[j] = palabraNueva[k];
     }
 }
+
+//void poner_acento(wchar_t* palabra, int pos, ListaSugerencias lista)
+
+// void poner_acento(wchar_t* palabra, int pos){
+//     wchar_t a='á', e='é', i='í', o='ó', u='ú', n='ñ';
+//     if (pos < wcslen(palabra)){
+//         wchar_t caracter = palabra[pos];
+//         switch(caracter){
+//             case 
+//         }
+//     }
+// }
 
 
 // Acentúa una palabra en una posición dada, si es que el caracter en esa
