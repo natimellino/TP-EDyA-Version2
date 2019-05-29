@@ -211,14 +211,8 @@ Cola insertar_caracteres(wchar_t* palabra, wchar_t* temp, Cola cola, int pos){
 // caracteres de lugar, insertando letras, separando la palabra, poniendo tildes,
 // eliminando caracteres y reemplazando caracteres.
 
-Cola generar_sugerencia(wchar_t* palabra, ListaSugerencias lista, TablaHash* diccionario, Cola cola){
+Cola sugerencia(wchar_t* palabra, wchar_t* temp, Cola cola){
     int len = wcslen(palabra);
-    wchar_t* temp = malloc(sizeof(wchar_t)*(len+2));
-    wcscpy(temp, palabra);
-    // Variables temporales sólo para la funcion 'separar'.
-    wchar_t* aux1 = malloc(sizeof(wchar_t)*(len+3));
-    wchar_t* aux2 = malloc(sizeof(wchar_t)*(len+3)); 
-    // Generamos todas las posibles sugerencias y las agregamos a una cola.
     for (int i = 0; i <= len; i++){
         //1 (funciona bien)
        intercambiar(temp, i, i+1);
@@ -235,8 +229,38 @@ Cola generar_sugerencia(wchar_t* palabra, ListaSugerencias lista, TablaHash* dic
        }
        // 4 (funciona bien)
        cola = insertar_caracteres(palabra, temp, cola, i);
+       wcscpy(temp, palabra);
     }
-    return cola;      
+    return cola;
+}
+
+ListaSugerencias generar_sugerencia(wchar_t* palabra, ListaSugerencias lista, TablaHash* diccionario, Cola cola){
+    int len = wcslen(palabra);
+    wchar_t* temp = malloc(sizeof(wchar_t)*(len+2));
+    wcscpy(temp, palabra);
+    // Variables temporales sólo para la funcion 'separar'.
+    // wchar_t* aux1 = malloc(sizeof(wchar_t)*(len+3));
+    // wchar_t* aux2 = malloc(sizeof(wchar_t)*(len+3)); 
+
+    // Generamos todas las posibles sugerencias a distancia 1 y las agregamos a una cola.
+    cola = sugerencia(palabra, temp, cola);
+    int i = 0, palabrasDistanciaUno = cola_cant_elementos(cola); 
+    wchar_t* pal = malloc(sizeof(wchar_t)*(len+2)); 
+    while(lista->nelems < 5 || i < palabrasDistanciaUno){
+        // guardamos en pal el primer elemento de la cola
+        wcscpy(pal, cola_primero(cola));
+        wcscpy(temp, pal);
+        // si la palabra esta la agregamos a sugerencias
+        if (tablahash_buscar(diccionario, pal)){
+            lista = agregar_elemento(lista, pal);
+        }
+        // generamos todas las posibles sugerencias para pal y desencolamos
+        cola = sugerencia(pal, temp, cola);
+        cola = cola_desencolar(cola);
+        i++;
+    }
+    
+    return lista;      
 }
 
 int main(){
@@ -263,16 +287,16 @@ int main(){
     //wcscpy(p1, (wchar_t*)palabras->tabla[11].nodoRaiz->dato);
     //wprintf(L"%ls %d\n\n", p1, l);
     //reemplazar(p1, L'í', 5);
-    wchar_t p[] = L"cancion";
+    wchar_t p[] = L"án";
     int l1 = wcslen(p);
-    wprintf(L"%ls %d\n\n", p, l1);
+    wprintf(L"%ls %d\n", p, l1);
     Cola cola = cola_crear();
 
     ListaSugerencias sugerencias = crear_lista(50);
-    cola = generar_sugerencia(p, sugerencias, palabras, cola);
+    sugerencias = generar_sugerencia(p, sugerencias, palabras, cola);
     wprintf(L"\n\n");
     wprintf(L"Sugerencias para %ls:\n", p);
-    cola_imprimir(cola);
+    imprimir_lista(sugerencias);
 
     /*wchar_t textoEntrada[30];
     printf("Nombre del archivo de texto (no más de 30 caracteres):\n");

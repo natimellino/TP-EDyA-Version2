@@ -73,6 +73,14 @@ Cola cola_desencolar(Cola cola){
     return cola;
 }
 
+int cola_cant_elementos(Cola cola){
+    int cant = 0;
+    for(Cola i = cola; i != cola->ant; i = i->sig){
+        cant++;
+    }
+    return cant;
+}
+
 /* Imprime una cola. */
 
 void cola_imprimir(Cola cola){

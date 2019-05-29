@@ -16,4 +16,6 @@ Cola cola_encolar(Cola cola, wchar_t* palabra);
 
 Cola cola_desencolar(Cola cola);
 
+int cola_cant_elementos(Cola cola);
+
 void cola_imprimir(Cola cola);
