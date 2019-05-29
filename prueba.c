@@ -28,15 +28,18 @@ void eliminar_caracter(wchar_t* palabra, int i){
     palabra[len-1] = '\0';
 }
 
+void reemplazar(wchar_t* palabra, wchar_t c, int pos){
+    palabra[pos] = c;
+} 
 // Agrega al caracter c en la posición pos.
 
-void poner_caracter(wchar_t* palabra, wchar_t c, int pos){
+void inserta_caracter(wchar_t* palabra, wchar_t c, int pos){
     int len = wcslen(palabra);
-    for(int i = len; i >= pos; i--){
+    for(int i = len; i > pos; i--){
         palabra[i] = palabra[i-1];
     }
     palabra[pos] = c;
-    wprintf(L"p[pos]: %lc\n", palabra[pos]);
+    palabra[len+1] = L'\0';
 }
 // Separa la palabra en dos agregando un espacio en palabra[pos].
 
@@ -65,68 +68,7 @@ void separar(wchar_t* palabra, wchar_t* sub1, wchar_t* sub2, int pos){
     } 
 }
 
-// Reemplaza el caracter de la posición pos de la palabra por el char c.
-
-void reemplazar(wchar_t* palabra, wchar_t c, int pos){
-    palabra[pos] = c;
-} 
-
-// Inserta una palabra en otra dada, en una determinada posición.
-
-void insertar_palabra(wchar_t* palabra, wchar_t* palabraNueva, int pos){
-    int len1 = wcslen(palabra);
-    int len2 = wcslen(palabraNueva);
-    //palabra = realloc(palabra, sizeof(char)*(len1+len2));
-    for (int i = len1+len2; i >= pos; i--){
-        palabra[i] = palabra[i-len2];
-    }
-    for(int j = pos, k = 0; k < len2; j++, k++){
-        palabra[j] = palabraNueva[k];
-    }
-}
-
-//void poner_acento(wchar_t* palabra, int pos, ListaSugerencias lista)
-
-// void poner_acento(wchar_t* palabra, int pos){
-//     wchar_t a='á', e='é', i='í', o='ó', u='ú', n='ñ';
-//     if (pos < wcslen(palabra)){
-//         wchar_t caracter = palabra[pos];
-//         switch(caracter){
-//             case 
-//         }
-//     }
-// }
 
 
-// Acentúa una palabra en una posición dada, si es que el caracter en esa
-// posición es una vocal, sino, no hace nada.
 
-// void poner_acento(char* palabra, int pos){
-//     if (pos < strlen(palabra)){
-//         char vocal = palabra[pos];
-//         char a[] = "á", e[] = "é", i[] = "í", o[] = "ó", u[] = "ú";
-//         switch(vocal){
-//         case 'a':
-//             eliminar_caracter(palabra, pos);
-//             insertar_palabra(palabra, a, pos); 
-//             break;
-//         case 'e':
-//             eliminar_caracter(palabra, pos);
-//             insertar_palabra(palabra, e, pos);
-//             break;
-//         case 'i':
-//             eliminar_caracter(palabra, pos);
-//             insertar_palabra(palabra, i, pos);   
-//             break;
-//         case 'o':
-//             eliminar_caracter(palabra, pos);
-//             insertar_palabra(palabra, o, pos);
-//             break;
-//         case 'u':
-//             eliminar_caracter(palabra, pos);
-//             insertar_palabra(palabra, u, pos);
-//             break;
-//         }
-//     }
-// }
 

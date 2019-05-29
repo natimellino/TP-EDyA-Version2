@@ -6,7 +6,7 @@ void intercambiar(wchar_t* palabra, int i, int j);
 
 void eliminar_caracter(wchar_t* palabra, int i);
 
-void poner_caracter(wchar_t* palabra, wchar_t c, int pos);
+void inserta_caracter(wchar_t* palabra, wchar_t c, int pos);
 
 void separar(wchar_t* palabra, wchar_t* sub1, wchar_t* sub2, int pos);
 

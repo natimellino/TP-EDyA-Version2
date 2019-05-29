@@ -8,6 +8,7 @@
 #include <assert.h>
 #include "prueba.h"
 #include "tablahash.h"
+#include "colas.h"
 #include "btree.h"
 #define ARR_SIZE 1889
 #define MAX_CADENA 20
@@ -183,143 +184,59 @@ void leer_archivo_ingreso()
   fclose(input);
 }
 
-void poner_caracteres_especiales(wchar_t* palabra, wchar_t* temp, int i, TablaHash* diccionario, ListaSugerencias lista, funcionVisitante f){
-                wcscpy(temp, palabra);
-                f(temp, L'á', i);
-                wprintf(L"%ls\n", temp);
-                if(tablahash_buscar(diccionario, temp)){
-                lista = agregar_elemento(lista, temp);
-                }
 
-                wcscpy(temp, palabra);
-                wprintf(L"%ls\n", temp);
-                f(temp, L'é', i);
-                wprintf(L"%ls\n", temp);
-                if(tablahash_buscar(diccionario, temp)){
-                lista = agregar_elemento(lista, temp);
-                }
-
-                wcscpy(temp, palabra);
-                wprintf(L"%ls\n", temp);
-                f(temp, L'í', i);
-                wprintf(L"%ls\n", temp);
-                if(tablahash_buscar(diccionario, temp)){
-                lista = agregar_elemento(lista, temp);
-                }
-
-                wcscpy(temp, palabra);
-                wprintf(L"%ls\n", temp);
-                f(temp, L'ó', i);
-                wprintf(L"%ls\n", temp);
-                if(tablahash_buscar(diccionario, temp)){
-                lista = agregar_elemento(lista, temp);
-                }
-
-                wcscpy(temp, palabra);
-                wprintf(L"%ls\n", temp);
-                f(temp, L'ú', i);
-                wprintf(L"%ls\n", temp);
-                if(tablahash_buscar(diccionario, temp)){
-                lista = agregar_elemento(lista, temp);
-                }
-
-                wcscpy(temp, palabra);
-                wprintf(L"%ls\n", temp);
-                // ñ y diresis
-                f(temp, L'ñ', i);
-                wprintf(L"%ls\n", temp);
-                if(tablahash_buscar(diccionario, temp)){
-                lista = agregar_elemento(lista, temp);
-                }
-                wcscpy(temp, palabra);
-                wprintf(L"%ls\n", temp);
-                f(temp, L'ü', i);
-                wprintf(L"%ls\n", temp);
-                if(tablahash_buscar(diccionario, temp)){
-                lista = agregar_elemento(lista, temp);
-                }
-                wcscpy(temp, palabra);
+// reemplaza por todos los posibles caracteres en una palabra dada una posicion.
+Cola reemplazar_caracteres(wchar_t* palabra, wchar_t* temp, Cola cola, int pos){
+    wchar_t letras[] = L"áéíóúüabcdefghijklmnñopqrstuvwxyz";
+    for(int i = 0; i < wcslen(letras); i++){
+        reemplazar(temp, letras[i], pos);
+        cola = cola_encolar(cola, temp);
+        wcscpy(temp, palabra);
+    }
+    return cola;
 }
 
+// inserta todos los posibles caracteres en una palabra dada una posicion.
+Cola insertar_caracteres(wchar_t* palabra, wchar_t* temp, Cola cola, int pos){
+    wchar_t letras[] = L"áéíóúüabcdefghijklmnñopqrstuvwxyz";
+    for(int i = 0; i < wcslen(letras); i++){
+        inserta_caracter(temp, letras[i], pos);
+        cola = cola_encolar(cola, temp);
+        wcscpy(temp, palabra);
+    }
+    return cola;
+}
 // Dada una lista, un diccionario y una palabra que no se encuentra en el
 // diccionario se generan sugerencias posibles para esa palabra intercambiando
 // caracteres de lugar, insertando letras, separando la palabra, poniendo tildes,
 // eliminando caracteres y reemplazando caracteres.
 
-ListaSugerencias generar_sugerencia(wchar_t* palabra, ListaSugerencias lista, TablaHash* diccionario){
+Cola generar_sugerencia(wchar_t* palabra, ListaSugerencias lista, TablaHash* diccionario, Cola cola){
     int len = wcslen(palabra);
-    wchar_t* temp = malloc(sizeof(wchar_t)*(len+1));
+    wchar_t* temp = malloc(sizeof(wchar_t)*(len+2));
     wcscpy(temp, palabra);
     // Variables temporales sólo para la funcion 'separar'.
     wchar_t* aux1 = malloc(sizeof(wchar_t)*(len+3));
     wchar_t* aux2 = malloc(sizeof(wchar_t)*(len+3)); 
-
+    // Generamos todas las posibles sugerencias y las agregamos a una cola.
     for (int i = 0; i <= len; i++){
-        if(i < len){
-            // 1) Primera operación.
-            // wprintf(L"1: %ls\n", temp);
-            // intercambiar(temp, i, i+1);
-            // if (tablahash_buscar(diccionario, temp)){
-            //     lista = agregar_elemento(lista, temp);
-            // }
-            // wprintf(L"1: %ls\n", temp);
-            // wcscpy(temp, palabra);
-            // wprintf(L"1: %ls\n", temp);
-            //wprintf(L"1: %ls\n", temp);
-            //2) Segunda operación.
-            // eliminar_caracter(temp, i);
-            // wprintf(L"2: %ls\n", temp); 
-            // if (tablahash_buscar(diccionario, temp)){
-            //     lista = agregar_elemento(lista, temp);
-            // }
-            // wcscpy(temp, palabra);
-            // wprintf(L"2: %ls\n", temp); 
-            // 3) Tercera operación.
-            // separar(temp, aux1, aux2, i);
-            // wprintf(L"3: %ls\n", temp);
-            // //int a = wcslen(aux1);
-            // wprintf(L"3: %ls\n", aux1);
-            // wprintf(L"3: %ls\n\n", aux2);
-            // //printf("%s, %s, %s\n", temp, aux1, aux2);
-            // if (tablahash_buscar(diccionario, aux1) && tablahash_buscar(diccionario, aux2)){
-            //     lista = agregar_elemento(lista, temp);
-            }
-            // wcscpy(temp, palabra);
-            // wprintf(L"3: %ls\n", temp);
-            //poner_caracteres_especiales(palabra, temp, i, diccionario, lista, reemplazar);
-            //poner_caracteres_especiales(palabra, temp, i, diccionario, lista, poner_caracter);
-            wcscpy(temp, palabra);
-        // }
-        wchar_t letras[] = L"áéíóúüabcdefghijklmnñopqrstuvwxyz";
-         for (int j = 0; j < wcslen(letras); j++){
-            wcscpy(temp, palabra);
-        //     // 5) Quinta operación.
-        //     if (i <= len){
-        //         reemplazar(temp, j, i);
-        //        // wprintf(L"%ls\n", temp);
-        //         if(tablahash_buscar(diccionario, temp)){
-        //         lista = agregar_elemento(lista, temp);
-        //         }
-        //         wcscpy(temp, palabra);
-        //         // Ponemos las tildes, ñ y dieresis.
-
-                
-        //     }
-        //     wcscpy(temp, palabra);
-        //     // 6) Sexta operación.
-            poner_caracter(temp, letras[j], i);
-            wprintf(L"%ls\n", temp);
-             if(tablahash_buscar(diccionario, temp)){
-                 lista = agregar_elemento(lista, temp);
-            }
-         }
-        
+        //1 (funciona bien)
+       intercambiar(temp, i, i+1);
+       cola = cola_encolar(cola, temp);
+       wcscpy(temp, palabra);
+       if (i < len){
+        //2 (funciona bien)
+        eliminar_caracter(temp, i);
+        cola = cola_encolar(cola, temp);
+        wcscpy(temp, palabra);
+        // 3  (funciona bien)
+        cola = reemplazar_caracteres(palabra, temp, cola, i);
+        wcscpy(temp, palabra);
+       }
+       // 4 (funciona bien)
+       cola = insertar_caracteres(palabra, temp, cola, i);
     }
- }
-    free(temp);
-    free(aux1);
-    free(aux2);
-    return lista;
+    return cola;      
 }
 
 int main(){
@@ -349,18 +266,13 @@ int main(){
     wchar_t p[] = L"cancion";
     int l1 = wcslen(p);
     wprintf(L"%ls %d\n\n", p, l1);
-    //wprintf(L"%ls", p1);
-
-    // BORRAR DESPUÉS.
-    // wchar_t p[] = "lacanción";
-    // wchar_t* p1 = malloc(sizeof(wchar_t)*11);
-    // strcpy((wchar_t*) p1, p);
+    Cola cola = cola_crear();
 
     ListaSugerencias sugerencias = crear_lista(50);
-    sugerencias = generar_sugerencia(p, sugerencias, palabras);
+    cola = generar_sugerencia(p, sugerencias, palabras, cola);
     wprintf(L"\n\n");
     wprintf(L"Sugerencias para %ls:\n", p);
-    imprimir_lista(sugerencias);
+    cola_imprimir(cola);
 
     /*wchar_t textoEntrada[30];
     printf("Nombre del archivo de texto (no más de 30 caracteres):\n");
