@@ -79,7 +79,7 @@ void imprimir_lista(ListaSugerencias lista) {
 // Destruye una lista.
 
 void destruir_lista(ListaSugerencias lista) {
-  for (int i = 0; i < lista->capacidad; i++) {
+  for (int i = 0; i < lista->nelems; ++i) {
     free(lista->arreglo[i]);
   }
   free(lista->arreglo);
@@ -106,6 +106,12 @@ Palabra crear_palabra(wchar_t *palabra, int linea) {
   wcscpy(pal->palabra, palabra);
   pal->sugerencia = crear_lista(100);
   return pal;
+}
+
+void palabra_destruir(Palabra palabra) {
+  free(palabra->palabra);
+  destruir_lista(palabra->sugerencia);
+  free(palabra);
 }
 
 /* -------------------------------------------------------------------------------------------------------------
@@ -142,6 +148,7 @@ void distribucion_tabla(TablaHash *tabla) {
   for (int i = 0; i < ARR_SIZE; i++) {
     fprintf(fp, "%d %d\n", i, cant_nodos(tabla->tabla[i].nodoRaiz));
   }
+  fclose(fp);
 }
 
 // Lee un archivo donde se encuentra guardado un diccionario y
@@ -238,7 +245,7 @@ Cola sugerencia(wchar_t *palabra, wchar_t *temp, ListaSugerencias lista,
       }
       wcscpy(temp, palabra);
     }
-    // 4 (funciona bien)
+    // 4) Insertar caracteres.
     cola = insertar_caracteres(palabra, temp, cola, diccionario, lista, i);
     if (tablahash_buscar(diccionario, temp)) {
       lista = agregar_elemento(lista, temp);
@@ -278,7 +285,19 @@ ListaSugerencias generar_sugerencia(wchar_t *palabra, ListaSugerencias lista,
     cola = cola_desencolar(cola);
     i++;
   }
+  // cola_destruir(cola);
   return lista;
+}
+
+int es_alfabetica(wchar_t *cadena) {
+  int i = 0, len = wcslen(cadena), esAlfa = 1;
+  while (i < len && esAlfa) {
+    if (iswalpha(cadena[i]) == 0) {
+      esAlfa = 0;
+    }
+    i++;
+  }
+  return esAlfa;
 }
 
 void leer_archivo_ingreso(TablaHash *diccionario, char *nombreArchivo,
@@ -296,22 +315,27 @@ void leer_archivo_ingreso(TablaHash *diccionario, char *nombreArchivo,
       if (c == ' ' || c == '\n') {  // Termino de leer palabra
         *(cadena + i) = '\0';
         // if (c == '\n') c = fgetwc(input);
-        wprintf(L"cadena: %ls\n", cadena);
+        wprintf(L"cadena: %ls %d\n", cadena, es_alfabetica(cadena));
 
         // Por cada palabra leída preguntamos si se encuentra en
         // el diccionario, en caso de que no esté le generamos sugerencias.
-        if (!tablahash_buscar(diccionario, cadena)) {
-          Palabra pal = crear_palabra(cadena, linea);
-          pal->sugerencia =
-              generar_sugerencia(cadena, pal->sugerencia, diccionario);
-          fwprintf(fp,
-                   L"Línea %d: %ls no está en el diccionario, quizás quizo "
-                   L"decir:\n",
-                   pal->linea, pal->palabra);
-          for (int i = 0; i < pal->sugerencia->nelems; i++) {
-            fwprintf(fp, L"%ls\n", pal->sugerencia->arreglo[i]);
+        if (es_alfabetica(cadena) && cadena != L"" && cadena != L"\n" &&
+            cadena != L" ") {
+          if (!tablahash_buscar(diccionario, cadena)) {
+            Palabra pal = crear_palabra(cadena, linea);
+            pal->sugerencia =
+                generar_sugerencia(cadena, pal->sugerencia, diccionario);
+            fwprintf(fp,
+                     L"Línea %d: %ls no está en el diccionario, quizás quizo "
+                     L"decir:\n",
+                     pal->linea, pal->palabra);
+            for (int i = 0; i < pal->sugerencia->nelems; i++) {
+              fwprintf(fp, L"%ls\n", pal->sugerencia->arreglo[i]);
+            }
+            palabra_destruir(pal);
           }
         }
+
         if (c == '\n') linea++;
         i = 0;
       } else {  // sigue leyendo caracteres
@@ -320,6 +344,7 @@ void leer_archivo_ingreso(TablaHash *diccionario, char *nombreArchivo,
       }
     }
   }
+  free(cadena);
   fclose(input);
   fclose(fp);
 }
@@ -346,6 +371,6 @@ int main() {
   scanf("%s", archivoSalida);
   strcat(archivoSalida, ".txt");
   leer_archivo_ingreso(palabras, textoEntrada, archivoSalida);
-
+  tablahash_destruir(palabras);
   return 0;
 }
