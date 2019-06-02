@@ -213,6 +213,18 @@ Cola insertar_caracteres(wchar_t *palabra, wchar_t *temp, Cola cola,
   return cola;
 }
 
+int buscar_palabra_espaciada(wchar_t *palabra, TablaHash *diccionario) {
+  int len = wcslen(palabra), esta = 1;
+  wchar_t *aux;
+  wchar_t *buffer;
+  aux = wcstok(palabra, L" ", &buffer);
+  while (aux != NULL) {
+    esta *= tablahash_buscar(diccionario, aux);
+    aux = wcstok(NULL, L" ", &buffer);
+  }
+  return esta;
+}
+
 // Dada una lista, un diccionario y una palabra que no se encuentra en el
 // diccionario se generan sugerencias posibles para esa palabra intercambiando
 // caracteres de lugar, insertando letras, separando la palabra, poniendo
@@ -221,6 +233,7 @@ Cola insertar_caracteres(wchar_t *palabra, wchar_t *temp, Cola cola,
 Cola sugerencia(wchar_t *palabra, wchar_t *temp, ListaSugerencias lista,
                 TablaHash *diccionario, Cola cola, int vuelta) {
   int len = wcslen(palabra);
+  wchar_t c1, c2;
   wchar_t aux1[len + 1], aux2[len + 1];
   for (int i = 0; i <= len && (lista->nelems < 5 || vuelta == 1); i++) {
     // 1) Intercambiar caracteres.
@@ -228,16 +241,17 @@ Cola sugerencia(wchar_t *palabra, wchar_t *temp, ListaSugerencias lista,
     cola = cola_encolar(cola, temp);
     if (tablahash_buscar(diccionario, temp)) {
       lista = agregar_elemento(lista, temp);
-    }
-    wcscpy(temp, palabra);
+    }  // Revierto la operación.
+    intercambiar(temp, i, i + 1);
     if (i < len) {
       // 2) Eliminar caracteres.
+      c1 = temp[i];
       eliminar_caracter(temp, i);
       cola = cola_encolar(cola, temp);
       if (tablahash_buscar(diccionario, temp)) {
         lista = agregar_elemento(lista, temp);
-      }
-      wcscpy(temp, palabra);
+      }  // Revierto la operación.
+      inserta_caracter(temp, c1, i);
       // 3) Reemplazar caracteres.
       cola = reemplazar_caracteres(palabra, temp, cola, diccionario, lista, i);
       if (tablahash_buscar(diccionario, temp)) {
@@ -254,8 +268,7 @@ Cola sugerencia(wchar_t *palabra, wchar_t *temp, ListaSugerencias lista,
     // 5) Separar la palabra en 2.
     separar(temp, aux1, aux2, i);
     cola = insertar_caracteres(palabra, temp, cola, diccionario, lista, i);
-    if ((tablahash_buscar(diccionario, aux1) &&
-         (tablahash_buscar(diccionario, aux2)))) {
+    if (buscar_palabra_espaciada(temp, diccionario)) {
       lista = agregar_elemento(lista, temp);
     }
   }
@@ -309,18 +322,19 @@ void leer_archivo_ingreso(TablaHash *diccionario, char *nombreArchivo,
   input = fopen(nombreArchivo, "r");
   FILE *fp = fopen(archivoSalida, "w+");
   assert(input != NULL);
+  int n;
   while ((c = fgetwc(input)) != EOF) {
     c = towlower(c);
     if (c != '\r' && c != ',' && c != '!' && c != '?' && c != '.' && c != ':') {
       if (c == ' ' || c == '\n') {  // Termino de leer palabra
         *(cadena + i) = '\0';
-        // if (c == '\n') c = fgetwc(input);
-        wprintf(L"cadena: %ls %d\n", cadena, es_alfabetica(cadena));
+        n = wcslen(cadena);
+        if (iswalpha(c)) c = fgetwc(input);
+        wprintf(L"cadena: %ls %d\n", cadena, n);
 
         // Por cada palabra leída preguntamos si se encuentra en
         // el diccionario, en caso de que no esté le generamos sugerencias.
-        if (es_alfabetica(cadena) && cadena != L"" && cadena != L"\n" &&
-            cadena != L" ") {
+        if (es_alfabetica(cadena) && wcslen(cadena) > 0) {
           if (!tablahash_buscar(diccionario, cadena)) {
             Palabra pal = crear_palabra(cadena, linea);
             pal->sugerencia =
@@ -359,10 +373,9 @@ int main() {
   TablaHash *palabras = tablahash_crear(ARR_SIZE, funcionHash);
   leer_diccionario(diccionario, palabras);
 
-  // wchar_t p[] = L"lvandx";
+  // wchar_t p[] = L"la cola la la la";
   // wchar_t p1[30];
   // wcscpy(p1, p);
-
   char textoEntrada[30], archivoSalida[30];
   wprintf(L"Nombre del archivo de entrada (no más de 30 caracteres):\n");
   scanf("%s", textoEntrada);
@@ -372,5 +385,6 @@ int main() {
   strcat(archivoSalida, ".txt");
   leer_archivo_ingreso(palabras, textoEntrada, archivoSalida);
   tablahash_destruir(palabras);
+  wprintf(L"");
   return 0;
 }

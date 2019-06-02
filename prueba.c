@@ -49,7 +49,7 @@ void inserta_caracter(wchar_t* palabra, wchar_t c, int pos) {
 
 void separar(wchar_t* palabra, wchar_t* sub1, wchar_t* sub2, int pos) {
   int len = wcslen(palabra);
-  if (pos != 0 && pos != len) {
+  if (pos != 0 && pos != len && palabra[pos] != ' ') {
     int i, j = 0;
     for (i = 0; i < len; i++) {
       // wprintf(L"i: %d\n", i);

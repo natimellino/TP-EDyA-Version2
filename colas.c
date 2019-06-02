@@ -44,12 +44,14 @@ Cola cola_encolar(Cola cola, wchar_t* palabra) {
 Cola cola_desencolar(Cola cola) {
   if (!cola_es_vacia(cola)) {
     if (cola->sig == cola->ant) {  // Hay un solo elemento.
+      free(cola->palabra);
       free(cola);
     } else {
       Cola primero = cola;
       primero->ant->sig = primero->sig;
       primero->sig->ant = primero->ant;
       cola = primero->sig;
+      free(primero->palabra);
       free(primero);
     }
   }
@@ -81,8 +83,10 @@ void cola_destruir(Cola cola) {
   while (cola->sig != cola) {
     nodoAEliminar = cola->sig;
     cola->sig = nodoAEliminar->sig;
+    free(nodoAEliminar->palabra);
     free(nodoAEliminar);
   }
   // borro el primer nodo
+  free(cola->palabra);
   free(cola);
 }
