@@ -13,14 +13,6 @@ void btree_destruir(BTree nodo) {
   }
 }
 
-/*BTree btree_unir(int dato, BTree left, BTree right) {
-  BTree nuevoNodo = malloc(sizeof(BTNodo));
-  nuevoNodo->dato = dato;
-  nuevoNodo->left = left;
-  nuevoNodo->right = right;
-  return nuevoNodo;
-}*/
-
 BTree bstree_insertar(BTree arbol, wchar_t* palabra) {
   // wchar_t* aux = palabra;
 
@@ -60,33 +52,6 @@ int buscar_nodo(BTree nodo, wchar_t* palabra) {
     } else {
       return buscar_nodo(nodo->right, palabra);
     }
-  }
-}
-
-void btree_recorrer(BTree arbol, BTreeOrdenDeRecorrido orden,
-                    FuncionVisitante visit) {
-  switch (orden) {
-    case 0:
-      if (arbol != NULL) {  // Inorden
-        btree_recorrer(arbol->left, orden, visit);
-        visit(arbol->dato);
-        btree_recorrer(arbol->right, orden, visit);
-      }
-      break;
-    case 1:
-      if (arbol != NULL) {  // Preorden
-        visit(arbol->dato);
-        btree_recorrer(arbol->left, orden, visit);
-        btree_recorrer(arbol->right, orden, visit);
-      }
-      break;
-    case 2:
-      if (arbol != NULL) {  // Postorden
-        btree_recorrer(arbol->left, orden, visit);
-        btree_recorrer(arbol->right, orden, visit);
-        visit(arbol->dato);
-      }
-      break;
   }
 }
 
