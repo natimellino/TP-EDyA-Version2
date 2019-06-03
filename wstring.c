@@ -5,7 +5,9 @@
 #include <stdlib.h>
 #include <wchar.h>
 
-// Intercambia las posiciones i, j de la palabra dada.
+// Observacion:
+//              Estas funciones asumen que la cadena que reciben como argumento
+//              tiene espacio suficiente para realizar las operaciones.
 
 void intercambiar(wchar_t* palabra, int i, int j) {
   if (palabra[i] != palabra[j]) {

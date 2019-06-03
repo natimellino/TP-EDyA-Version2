@@ -9,82 +9,12 @@
 #include <wctype.h>
 #include "btree.h"
 #include "colas.h"
+#include "sugerencias.h"
 #include "tablahash.h"
 #include "wstring.h"
 #define ARR_SIZE 1889
 #define MAX_CADENA 30
 
-// Estructura para la lista de sugerencias, donde se guardan:
-// -) Un arreglo de wchar_t** para almacenar palabras.
-// -) La capacidad total del arreglo (capacidad).
-// -) El número de elementos que tiene el arreglo hasta el momento (nelems).
-
-typedef struct _Sugerencias {
-  wchar_t **arreglo;
-  int capacidad;
-  int nelems;
-} Sugerencias;
-
-typedef Sugerencias *ListaSugerencias;
-
-// Crea una lista.
-
-ListaSugerencias crear_lista(int capacidad) {
-  ListaSugerencias lista = malloc(sizeof(struct _Sugerencias));
-  lista->arreglo = malloc(sizeof(wchar_t *) * capacidad);
-  lista->capacidad = capacidad;
-  lista->nelems = 0;
-  return lista;
-}
-
-// Busca un elemento en una lista.
-
-int buscar_elemento(ListaSugerencias lista, wchar_t *palabra) {
-  int i = 0, encontrado = 0;
-  while (i < lista->nelems && !encontrado) {
-    if (wcscmp(lista->arreglo[i], palabra) == 0) {
-      encontrado = 1;
-    }
-    i++;
-  }
-  return encontrado;
-}
-
-// Agrega un elemento a una lista.
-
-ListaSugerencias agregar_elemento(ListaSugerencias lista, wchar_t *string) {
-  if (lista->nelems < lista->capacidad - 1 && !buscar_elemento(lista, string)) {
-    lista->arreglo[lista->nelems] =
-        malloc(sizeof(wchar_t) * (wcslen(string) + 2));
-    wcscpy(lista->arreglo[lista->nelems], string);
-    lista->nelems++;
-  }
-  return lista;
-}
-
-// Imprime una lista.
-
-void imprimir_lista(ListaSugerencias lista) {
-  if (lista->nelems > 0) {
-    // printf("entre al if\n");
-    for (int i = 0; i < lista->nelems; i++) {
-      // printf("entre al for\n");
-      wprintf(L"%ls\n", lista->arreglo[i]);
-    }
-  } else {
-    wprintf(L"No existen sugerencias para la palabra ingresada.\n");
-  }
-}
-
-// Destruye una lista.
-
-void destruir_lista(ListaSugerencias lista) {
-  for (int i = 0; i < lista->nelems; ++i) {
-    free(lista->arreglo[i]);
-  }
-  free(lista->arreglo);
-  free(lista);
-}
 //------------------------------------------------------------------------------
 
 // Estructura auxiliar donde se va a guardar una palabra a corregir,
@@ -161,33 +91,29 @@ void leer_diccionario(char *nombreArchivo, TablaHash *tabla) {
   wchar_t *linea = malloc(sizeof(wchar_t) * 100);
   int len, i = 0;
   while (!feof(fp)) {
-    // wprintf(L"Entre al while\n");
     fgetws(linea, 100, fp);
-    // fwscanf(fp, linea, L"%ls");
-    // Convertimos las palabras a minúsculas y ponermos el '\0' al final.
     len = wcslen(linea);
     if (linea[len - 1] == '\n') {
       linea[len - 1] = '\0';
       len--;
     }
+    for (int j = 0; j < len; j++) linea[i] = towlower(linea[i]);
 
-    // wprintf(L"palabra: %ls, long: %d\n", linea, len);
     tablahash_insertar(tabla, linea);
-    // wprintf(L"Inserte palabra: %d\n", i);
     i++;
   }
-  // wprintf(L"ultima linea guardada: %ls,longitud: %d\n", linea, len);
   wprintf(L"Diccionario cargado: palabras leídas: %d\n", i);
   free(linea);
   fclose(fp);
 }
 
-// reemplaza por todos los posibles caracteres en una palabra dada una posicion.
+// Reemplaza por todos los posibles caracteres en una palabra dada una posición.
+
 Cola reemplazar_caracteres(wchar_t *palabra, wchar_t *temp, Cola cola,
                            TablaHash *diccionario, ListaSugerencias lista,
                            int pos) {
   wchar_t letras[] = L"áéíóúüabcdefghijklmnñopqrstuvwxyz";
-  for (int i = 0; i < wcslen(letras) && lista->nelems < 5; i++) {
+  for (int i = 0; i < wcslen(letras); i++) {
     reemplazar(temp, letras[i], pos);
     if (tablahash_buscar(diccionario, temp))
       lista = agregar_elemento(lista, temp);
@@ -197,12 +123,13 @@ Cola reemplazar_caracteres(wchar_t *palabra, wchar_t *temp, Cola cola,
   return cola;
 }
 
-// inserta todos los posibles caracteres en una palabra dada una posicion.
+// Inserta todos los posibles caracteres en una palabra dada una posición.
+
 Cola insertar_caracteres(wchar_t *palabra, wchar_t *temp, Cola cola,
                          TablaHash *diccionario, ListaSugerencias lista,
                          int pos) {
   wchar_t letras[] = L"áéíóúüabcdefghijklmnñopqrstuvwxyz";
-  for (int i = 0; i < wcslen(letras) && lista->nelems < 5; i++) {
+  for (int i = 0; i < wcslen(letras); i++) {
     inserta_caracter(temp, letras[i], pos);
     if (tablahash_buscar(diccionario, temp))
       lista = agregar_elemento(lista, temp);
@@ -212,6 +139,9 @@ Cola insertar_caracteres(wchar_t *palabra, wchar_t *temp, Cola cola,
   }
   return cola;
 }
+
+// Dada una cadena que contiene espacios, la separa y busca cada subcadena el
+// diccionario.
 
 int buscar_palabra_espaciada(wchar_t *palabra, TablaHash *diccionario) {
   int esta = 1;
@@ -233,14 +163,13 @@ int buscar_palabra_espaciada(wchar_t *palabra, TablaHash *diccionario) {
 Cola sugerencia(wchar_t *palabra, wchar_t *temp, ListaSugerencias lista,
                 TablaHash *diccionario, Cola cola, int vuelta) {
   int len = wcslen(palabra);
-  // wchar_t c1;
   for (int i = 0; i <= len && (lista->nelems < 5 || vuelta == 1); i++) {
     // 1) Intercambiar caracteres.
     intercambiar(temp, i, i + 1);
     cola = cola_encolar(cola, temp);
     if (tablahash_buscar(diccionario, temp)) {
       lista = agregar_elemento(lista, temp);
-    }  // Revierto la operación.
+    }
     wcscpy(temp, palabra);
     if (i < len) {
       // 2) Eliminar caracteres.
@@ -248,21 +177,19 @@ Cola sugerencia(wchar_t *palabra, wchar_t *temp, ListaSugerencias lista,
       cola = cola_encolar(cola, temp);
       if (tablahash_buscar(diccionario, temp)) {
         lista = agregar_elemento(lista, temp);
-      }  // Revierto la operación.
+      }
       wcscpy(temp, palabra);
       // 3) Reemplazar caracteres.
       cola = reemplazar_caracteres(palabra, temp, cola, diccionario, lista, i);
       if (tablahash_buscar(diccionario, temp)) {
         lista = agregar_elemento(lista, temp);
       }
-      wcscpy(temp, palabra);
     }
     // 4) Insertar caracteres.
     cola = insertar_caracteres(palabra, temp, cola, diccionario, lista, i);
     if (tablahash_buscar(diccionario, temp)) {
       lista = agregar_elemento(lista, temp);
     }
-    wcscpy(temp, palabra);
     // 5) Separar la palabra en 2.
     separar(temp, i);
     cola = cola_encolar(cola, temp);
@@ -274,6 +201,9 @@ Cola sugerencia(wchar_t *palabra, wchar_t *temp, ListaSugerencias lista,
   return cola;
 }
 
+// Genera todas las posibles sugerencias para una palabra que no se encuentra en
+// el diccionario.
+
 ListaSugerencias generar_sugerencia(wchar_t *palabra, ListaSugerencias lista,
                                     TablaHash *diccionario) {
   Cola cola = cola_crear();
@@ -283,7 +213,6 @@ ListaSugerencias generar_sugerencia(wchar_t *palabra, ListaSugerencias lista,
   // Generamos todas las posibles sugerencias a distancia 1 y las agregamos a
   // una cola.
   cola = sugerencia(palabra, temp, lista, diccionario, cola, 1);
-  cola_imprimir(cola);
   int i = 0;
   wchar_t pal[len + 2];
   // Si no llegamos a 5 sugerencias con las palabras a distancia 1 seguimos,
@@ -302,66 +231,51 @@ ListaSugerencias generar_sugerencia(wchar_t *palabra, ListaSugerencias lista,
   return lista;
 }
 
-int es_alfabetica(wchar_t *cadena) {
-  int i = 0, len = wcslen(cadena), esAlfa = 1;
-  while (i < len && esAlfa) {
-    if (iswalpha(cadena[i]) == 0) {
-      esAlfa = 0;
-    }
-    i++;
-  }
-  return esAlfa;
-}
+// Lee un archivo de entrada que contiene texto y para cada palabra que no se
+// encuentre en el diccionario se generan posibles sugerencias y se escriben en
+// un archivo.
 
 void leer_archivo_ingreso(TablaHash *diccionario, char *nombreArchivo,
                           char *archivoSalida) {
-  int i = 0, linea = 1;
+  int i = 0, linea = 1, n;
   wchar_t c;
   wchar_t *cadena = malloc(sizeof(wchar_t) * MAX_CADENA);
   FILE *input;
   input = fopen(nombreArchivo, "r");
-  FILE *fp = fopen(archivoSalida, "w+");
+  FILE *output = fopen(archivoSalida, "w+");
   assert(input != NULL);
-  // int n;
   while ((c = fgetwc(input)) != EOF) {
-    c = towlower(c);
-    // if (c != '\r' && c != ',' && c != '!' && c != '?' && c != '.' && c !=
-    // ':') {
-    if (c == ' ' || c == '\n') {  // Termino de leer palabra
+    if (!iswalpha(c)) {  // si no pertenece a el alfabeto agrega el terminador
       *(cadena + i) = '\0';
-      // n = wcslen(cadena);
-      if (iswalpha(c)) c = fgetwc(input);
-      // wprintf(L"cadena: %ls %d\n", cadena, n);
-
+      n = wcslen(cadena);
       // Por cada palabra leída preguntamos si se encuentra en
       // el diccionario, en caso de que no esté le generamos sugerencias.
-      if (es_alfabetica(cadena) && wcslen(cadena) > 0) {
+      if (n) {
         if (!tablahash_buscar(diccionario, cadena)) {
-          Palabra pal = crear_palabra(cadena, linea);
-          pal->sugerencia =
-              generar_sugerencia(cadena, pal->sugerencia, diccionario);
-          fwprintf(fp,
+          Palabra palabra = crear_palabra(cadena, linea);
+          palabra->sugerencia =
+              generar_sugerencia(cadena, palabra->sugerencia, diccionario);
+          fwprintf(output,
                    L"Línea %d: %ls no está en el diccionario, quizás quizo "
                    L"decir:\n",
-                   pal->linea, pal->palabra);
-          for (int i = 0; i < pal->sugerencia->nelems; i++) {
-            fwprintf(fp, L"%ls\n", pal->sugerencia->arreglo[i]);
+                   palabra->linea, palabra->palabra);
+          for (int i = 0; i < palabra->sugerencia->nelems; i++) {
+            fwprintf(output, L"%ls\n", palabra->sugerencia->arreglo[i]);
           }
-          palabra_destruir(pal);
+          palabra_destruir(palabra);
         }
       }
-
       if (c == '\n') linea++;
       i = 0;
-    } else {  // sigue leyendo caracteres
+    } else {  // agrega las palabras pertenecientes al alfabeto a la cadena
+      c = towlower(c);
       *(cadena + i) = c;
       i++;
     }
-    //}
   }
   free(cadena);
   fclose(input);
-  fclose(fp);
+  fclose(output);
 }
 
 int main() {
@@ -373,20 +287,20 @@ int main() {
 
   TablaHash *palabras = tablahash_crear(ARR_SIZE, funcionHash);
   leer_diccionario(diccionario, palabras);
+  distribucion_tabla(palabras);
 
-  wchar_t p[] = L"hola";
-  // wchar_t p1[30];
-  // wcscpy(p1, p);
   char textoEntrada[30], archivoSalida[30];
   wprintf(L"Nombre del archivo de entrada (no más de 30 caracteres):\n");
   scanf("%s", textoEntrada);
   strcat(textoEntrada, ".txt");
+
   wprintf(L"Nombre del archivo de salida (no más de 30 caracteres):\n");
   scanf("%s", archivoSalida);
   strcat(archivoSalida, ".txt");
+
   leer_archivo_ingreso(palabras, textoEntrada, archivoSalida);
+
   tablahash_destruir(palabras);
-  separar(p, 1);
-  wprintf(L"%ls\n", p);
+
   return 0;
 }
